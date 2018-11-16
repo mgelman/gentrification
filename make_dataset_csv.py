@@ -48,9 +48,10 @@ def parseBusiness():
             J_add = Jline["address"]
             J_city = Jline["city"]
             J_state = Jline["state"]
-            J_pos = Jline["postal code"]
+            J_pos = Jline["postal_code"]
             J_lat = Jline["latitude"]
             J_long = Jline["longitude"]
+            J_stars = Jline["stars"]
             J_rev = Jline["review_count"]
             J_is_open = Jline["is_open"]
             J_att = Jline["attributes"]
@@ -58,7 +59,7 @@ def parseBusiness():
             J_hours = Jline["hours"]
 
             # 3. put these features in an array, representing a row 
-            row = [J_bus_id, J_name, J_nei, J_add, J_city, J_state, J_pos, J_lat, J_long, J_rev, J_is_open, J_att, J_cat, J_hours]
+            row = [J_bus_id, J_name, J_nei, J_add, J_city, J_state, J_pos, J_lat, J_long, J_stars, J_rev, J_is_open, J_att, J_cat, J_hours]
 
             # 4. populating state_breakdown array
             businessesArray.append(row) 
@@ -95,9 +96,9 @@ def parseReview():
 
 
 def main():
-    review_csv = parseReview()
+    #review_csv = parseReview()
     business_csv = parseBusiness()
-    write_to_csv(review_csv, "reviews_full.csv")
+    #write_to_csv(review_csv, "reviews_full.csv")
     write_to_csv(business_csv, "business_full.csv")
 
 

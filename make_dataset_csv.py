@@ -36,7 +36,7 @@ def parseBusiness():
     """
     businessesArray = [] #initialize 
     count = 1
-    with open('change.json') as f:
+    with open('../yelp_dataset/yelp_academic_dataset_business.json') as f:
         for line in f:
             # 1. load in the line (each line is a json object)
             Jline = json.loads(line)

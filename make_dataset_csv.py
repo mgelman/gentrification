@@ -35,6 +35,7 @@ def parseBusiness():
         This would be modified in the future to generate ML sklearn ready excel files  
     """
     businessesArray = [] #initialize 
+    count = 1
     with open('change.json') as f:
         for line in f:
             # 1. load in the line (each line is a json object)
@@ -64,12 +65,12 @@ def parseBusiness():
     return businessesArray
 
 
-def parseBusiness():
+def parseReview():
     """takes in the business_id dictionary and the review dataset and return a 1-d array of business features + reviews.
         This would be modified in the future to generate ML sklearn ready excel files  
     """
     reviewArray = [] #initialize 
-    with open('change.json') as f:
+    with open('../yelp_dataset/yelp_academic_dataset_review.json') as f:
         for line in f:
             # 1. load in the line (each line is a json object)
             Jline = json.loads(line)
@@ -94,8 +95,10 @@ def parseBusiness():
 
 
 def main():
-    x=parse()
-    write_to_csv(parseReviews(x), "reviews_new.csv")
+    review_csv = parseReview()
+    business_csv = parseBusiness()
+    write_to_csv(review_csv, "reviews_full.csv")
+    write_to_csv(business_csv, "business_full.csv")
 
 
 # if __name__ == "__main__":

@@ -4,6 +4,7 @@ from io import StringIO
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import math
 
 
 #
@@ -53,21 +54,25 @@ def write_to_csv( list_of_rows, filename ):
 
 # For Pandas's read_csv, use header=0 when you know row 0 is a header row
 # df here is a "dataframe":
-file = 'reviews_mid.csv'
+file = 'business_mid.csv'
 
-if file == 'reviews_mid.csv':
+if file == 'business_mid.csv':
     df = pd.read_csv(file, header=None)
-    df.columns = ["review_id",	"business_id", "user_id", "stars", "date", "text", "useful", "funny", "cool"]
-if file == 'reviews_1000.csv':
-    df = pd.read_csv('reviews_1000.csv', header=0)
+    df.columns = ["business_id", "name", "neighborhood", "address", "city",  "state", "postal_code", "latitude", "longitude","stars", "review_count", "is_open", "attributes", "categories", "hours"]
+if file == 'business_1000.csv':
+    df = pd.read_csv(file, header=0)
 
 df.info()
-
+def transform(s):
+    """ from number to string
+    """
+    return math.floor(s)
 #let's drop columns with too few values or that won't be meaningful
-col = ['stars', 'text']
+col = ['stars', 'categories']
 df = df[col]
-df = df[pd.notnull(df['text'])]
-df.columns = ['stars', 'text']
+df = df[pd.notnull(df['categories'])]
+df['stars'] = df['stars'].map(transform)
+df.columns = ['stars', 'categories']
 
 #dictionaries for future use
 #category_to_id = dict(category_id_df.values)
@@ -77,18 +82,18 @@ print("+++ End of pandas +++\n")
 
 #display some data info
 fig = plt.figure(figsize=(8,6))
-df.groupby('stars').text.count().plot.bar(ylim=0)
+df.groupby('stars').categories.count().plot.bar(ylim=0)
 #plt.show()
 
 """
-bag of words. Turning text data into managebale forms 
+bag of words. Turning categories data into managebale forms 
 """
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 #standard setting 
 tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2', encoding='latin-1', ngram_range=(1, 2), stop_words='english')
-features = tfidf.fit_transform(df.text).toarray() #fit model
+features = tfidf.fit_transform(df.categories).toarray() #fit model
 labels = df.stars
 features.shape
 
@@ -110,17 +115,18 @@ for star in sorted(STARS):
 
 
 """
-Time to train our classifier 
+#Time to train our classifier 
 """
+
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 
 #X is our feature, y is our target result which is stars 
-X_train, X_test, y_train, y_test = train_test_split(df['text'], df['stars'], random_state = 0)
+X_train, X_test, y_train, y_test = train_test_split(df['categories'], df['stars'], random_state = 0)
 count_vect = CountVectorizer()
-X_train_counts = count_vect.fit_transform(X_train) #vectorizing text data 
+X_train_counts = count_vect.fit_transform(X_train) #vectorizing categories data 
 tfidf_transformer = TfidfTransformer() 
 X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 
@@ -130,7 +136,7 @@ X_test_counts = count_vect.transform(X_test)
 X_test_tfidf = tfidf_transformer.transform(X_test_counts)
 
 
-clf = MultinomialNB().fit(X_train_tfidf, y_train) #classifying transformed text data to target value 
+clf = MultinomialNB().fit(X_train_tfidf, y_train) #classifying transformed categories data to target value 
 
 #calculating the mean accuracy on the given test data and labels 
 training_score = clf.score(X_train_tfidf, y_train, sample_weight = None)
@@ -139,22 +145,3 @@ print()
 print("the training_score is " + str(training_score))
 print()
 print("the testing_score is " + str(testing_score))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

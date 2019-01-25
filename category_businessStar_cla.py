@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
+import sys
 
 
 #
@@ -83,8 +84,12 @@ print("+++ End of pandas +++\n")
 #display some data info
 fig = plt.figure(figsize=(8,6))
 df.groupby('stars').categories.count().plot.bar(ylim=0)
-#plt.show()
+plt.show()
 
+print()
+c = input("continue? y/n: ")
+if c == 'n':
+    sys.exit()
 """
 bag of words. Turning categories data into managebale forms 
 """
@@ -113,7 +118,10 @@ for star in sorted(STARS):
   print("  . Most correlated unigrams:\n. {}".format('\n. '.join(unigrams[-N:])))
   print("  . Most correlated bigrams:\n. {}".format('\n. '.join(bigrams[-N:])))
 
-
+print()
+c = input("continue? y/n: ")
+if c == 'n':
+    sys.exit()
 """
 #Time to train our classifier 
 """
@@ -145,3 +153,129 @@ print()
 print("the training_score is " + str(training_score))
 print()
 print("the testing_score is " + str(testing_score))
+
+print()
+c = input("continue? y/n: ")
+if c == 'n':
+    sys.exit()
+
+"""
+Test out different ML models
+"""
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import LinearSVC
+from sklearn.model_selection import cross_val_score
+
+
+models = [
+    RandomForestClassifier(n_estimators=100, max_depth=20, random_state=0),
+    LinearSVC(),
+    MultinomialNB(),
+    LogisticRegression(random_state=0),
+]
+
+
+CV = 5
+cv_df = pd.DataFrame(index=range(CV * len(models)))
+entries = []
+for model in models:
+  model_name = model.__class__.__name__
+  accuracies = cross_val_score(model, features, labels, scoring='accuracy', cv=CV)
+  for fold_idx, accuracy in enumerate(accuracies):
+    entries.append((model_name, fold_idx, accuracy))
+cv_df = pd.DataFrame(entries, columns=['model_name', 'fold_idx', 'accuracy'])
+import seaborn as sns
+sns.boxplot(x='model_name', y='accuracy', data=cv_df)
+sns.stripplot(x='model_name', y='accuracy', data=cv_df, 
+              size=8, jitter=True, edgecolor="gray", linewidth=2)
+
+median_accuracy = []
+index = 0
+accuracy = cv_df.accuracy 
+while index < 20:
+    ave = 0
+    for off_set in range(5):
+        ave += accuracy[index + off_set]
+    median_accuracy.append(ave / 5)
+    index += 5
+
+plt.show()
+print("Median acurracy for each of the four models tested")
+print()
+print("RandomForestClassifier: " + str(median_accuracy[0]))
+print("LinearSVC: " + str(median_accuracy[1]))
+print("MultinomialNB: " + str(median_accuracy[2]))
+print("LogisticRegression: " + str(median_accuracy[3]))
+
+c = input("continue? y/n: ")
+if c == 'n':
+    sys.exit()
+"""
+Further Digging into the LinearSVC model
+"""
+
+model = LinearSVC()
+X_train, X_test, y_train, y_test, indices_train, indices_test = train_test_split(features, labels, df.index, test_size=0.33, random_state=0)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+from sklearn.metrics import confusion_matrix
+
+conf_mat = confusion_matrix(y_test, y_pred)
+fig, ax = plt.subplots(figsize=(10,10))
+axis = np.array([1,2,3,4,5])
+sns.heatmap(conf_mat, annot=True, fmt='d', xticklabels = axis, yticklabels = axis)
+plt.ylabel('Actual')
+plt.xlabel('Predicted')
+plt.show()
+
+c = input("continue? y/n: ")
+if c == 'n':
+    sys.exit()
+"""
+Display misprediction
+"""
+
+from IPython.display import display
+
+for predicted in axis:
+  for actual in axis:
+    if predicted != actual and conf_mat[actual-1, predicted-1] >= 10:
+      print("'{}' predicted as '{}' : {} examples.".format(actual, predicted, conf_mat[actual-1, predicted-1]))
+      display(df.loc[indices_test[(y_test == actual) & (y_pred == predicted)]].head(20)[['stars', 'categories']])
+      print('')
+
+c = input("continue? y/n: ")
+if c == 'n':
+    sys.exit()
+"""
+More relevent for each star using LinearSVC
+"""
+model.fit(features, labels)
+N = 10
+
+for star in sorted(STARS):
+  indices = np.argsort(model.coef_[star-1])
+  feature_names = np.array(tfidf.get_feature_names())[indices]
+  unigrams = [v for v in reversed(feature_names) if len(v.split(' ')) == 1][:N]
+  bigrams = [v for v in reversed(feature_names) if len(v.split(' ')) == 2][:N]
+  print("# 'rating star - {}':".format(star))
+  print("  . Most correlated unigrams:\n. {}".format('\n. '.join(unigrams[-N:])))
+  print("  . Most correlated bigrams:\n. {}".format('\n. '.join(bigrams[-N:])))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

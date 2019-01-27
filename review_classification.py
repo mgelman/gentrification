@@ -6,6 +6,8 @@ Created on Fri Jan 25 17:11:08 2019
 """
 
 
+#BIG SCORE AND COMPUTATIONAL IMPROVEMENT WHEN CONDITIONING ON DF_MIN 1% SO TAKING OUT SO MANY WORDS THAT ARE TOO SPECIFIC
+
 
 import pandas as pd
 import itertools
@@ -34,7 +36,7 @@ sys.path.insert(0, "C:\Users\mgelman\AppData\Local\Continuum\anaconda2\Library\b
 
 #STEP 1: LOADING IN DATA - I ALREADY HAVE THE DATA READY TO GO FROM STATA
 #inputfile=os.path.join(path,"review.json")
-inputfile=os.path.join(path,"review_50k.json")
+inputfile=os.path.join(path,"review_500k.json")
 outputfile=os.path.join(path,"review.pkl")
 
 # load in file
@@ -59,22 +61,17 @@ star_label = [1,2,3,4,5]
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.25, random_state=1234)
 
 #vectorize
-#vectorizer = CountVectorizer(ngram_range=(1, 10),
-vectorizer = TfidfVectorizer(ngram_range=(1, 1),
+vectorizer = TfidfVectorizer(ngram_range=(1, 2),
                              stop_words='english',
-                             min_df=5,
-                             binary=True,
-                             token_pattern=r'\b[^\d\W]+\b') #only words and not numbers
+                             min_df=0.005)
+                             #binary=True)
+                             #token_pattern=r'\b[^\d\W]+\b') #only words and not numbers
 #vectorizer= TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2', encoding='latin-1', ngram_range=(1, 2), stop_words='english')
 X_tr = vectorizer.fit_transform(X_train)
 X_te = vectorizer.transform(X_test)
 
 vocab = vectorizer.get_feature_names()
 vocab_str = [str(x.encode('utf-8')) for x in vocab]
-
-
-
-
 
 
 def plot_confusion_matrix(cm, classes,
@@ -116,12 +113,10 @@ def plot_confusion_matrix(cm, classes,
 
 #%%
 
-
-
 #Use the tree clasifier
 #clf = DecisionTreeClassifier(
 clf = RandomForestClassifier(
-                n_estimators=8,
+                n_estimators=128,
                 n_jobs=-1,
                 verbose=1)
 
@@ -144,12 +139,8 @@ y_pred = clf.predict(X_te)
 #confusion matrix
 cm=confusion_matrix(y_test, y_pred)
 np.set_printoptions(precision=2)
-
-plt.figure()
-
 plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
 
-plt.show()
 
 
 #print cm
@@ -167,7 +158,7 @@ print("the testing_score is " + str(testing_score))
 #best features
 dictionary = dict(zip(vocab_str,clf.feature_importances_))
 sorted_x = sorted(dictionary.items(), key=operator.itemgetter(1),reverse=True)
-for x in range(10):
+for x in range(20):
     print sorted_x[x]
 
 #%%
@@ -177,9 +168,9 @@ clf = MultinomialNB().fit(X_tr, y_train) #classifying transformed text data to t
 
 #confusion matrix
 y_pred = clf.predict(X_te)
-cm=confusion_matrix(y_test, y_pred
-                    )
-print cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+cm=confusion_matrix(y_test, y_pred)
+np.set_printoptions(precision=2)
+plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
 
 
 #calculating the mean accuracy on the given test data and labels 
@@ -189,6 +180,58 @@ print()
 print("the training_score is " + str(training_score))
 print()
 print("the testing_score is " + str(testing_score))
+
+neg_class_prob_sorted = clf.feature_log_prob_[0, :].argsort()
+pos_class_prob_sorted = clf.feature_log_prob_[4, :].argsort()
+
+print(np.take(vocab, neg_class_prob_sorted[-10:]))
+print(np.take(vocab, pos_class_prob_sorted[-10:]))
+
+
+#%%
+from sklearn.svm import LinearSVC
+    
+clf = LinearSVC().fit(X_tr, y_train) #classifying transformed text data to target value 
+
+#confusion matrix
+y_pred = clf.predict(X_te)
+cm=confusion_matrix(y_test, y_pred)
+np.set_printoptions(precision=2)
+plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
+
+
+#calculating the mean accuracy on the given test data and labels 
+training_score = clf.score(X_tr, y_train, sample_weight = None)
+testing_score = clf.score(X_te, y_test, sample_weight = None)
+print()
+print("the training_score is " + str(training_score))
+print()
+print("the testing_score is " + str(testing_score))
+
+
+
+def plot_coefficients(classifier, feature_names, top_features=10):
+ lowstar_coef = classifier.coef_[0,:]*-1
+ highstar_coef = classifier.coef_[4,:]
+ top_positive_coefficients = np.argsort(highstar_coef)[-top_features:]
+ top_negative_coefficients = np.argsort(lowstar_coef)[:top_features]
+ top_coefficients = np.hstack([top_negative_coefficients, top_positive_coefficients])
+ # create plot
+ plt.figure(figsize=(15, 5))
+ colors = ['red' if c < 0 else 'blue' for c in lowstar_coef[top_coefficients]]
+ plt.bar(np.arange(2 * top_features), lowstar_coef[top_coefficients], color=colors)
+ feature_names = np.array(feature_names)
+ plt.xticks(np.arange(1, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60)
+ plt.show()
+
+
+
+#plot_coefficients(clf, vocab)
+#plot_coefficients(clf, vocab,star_type=4)
+
+
+
+
 
 #%%
 from sklearn.neural_network import MLPClassifier

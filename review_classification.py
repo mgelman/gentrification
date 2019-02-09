@@ -25,7 +25,7 @@ from scipy.sparse import hstack
 import operator
 import os
 import sys
-import pydot
+#import pydot
 from sklearn.externals.six import StringIO
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -35,12 +35,26 @@ sys.path.insert(0, path)
 sys.path.insert(0, "C:\Users\mgelman\AppData\Local\Continuum\anaconda2\Library\bin\graphviz")
 
 #STEP 1: LOADING IN DATA - I ALREADY HAVE THE DATA READY TO GO FROM STATA
-#inputfile=os.path.join(path,"review.json")
-inputfile=os.path.join(path,"review_500k.json")
+inputfile=os.path.join(path,"review.json")
+#inputfile=os.path.join(path,"review_500k.json")
 outputfile=os.path.join(path,"review.pkl")
 
 # load in file
 data = pd.read_json(inputfile,lines=True) 
+
+
+#%% Min and max date?
+#only keep date
+data=data['date']
+
+data.min(axis=0)
+data.max(axis=0)
+
+data['year'].value_counts()
+
+data['year'] = pd.DatetimeIndex(data).year
+
+#%%
 
 #only keep stars and text
 data=data[['stars','text']]

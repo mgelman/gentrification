@@ -36,7 +36,7 @@ sys.path.insert(0, "C:\Users\mgelman\AppData\Local\Continuum\anaconda2\Library\b
 
 #STEP 1: LOADING IN DATA - I ALREADY HAVE THE DATA READY TO GO FROM STATA
 #inputfile=os.path.join(path,"review.json")
-inputfile=os.path.join(path,"review_500k.json")
+inputfile=os.path.join(path,"review_50k.json")
 outputfile=os.path.join(path,"review.pkl")
 
 # load in file
@@ -218,16 +218,16 @@ def plot_coefficients(classifier, feature_names, top_features=10):
  top_coefficients = np.hstack([top_negative_coefficients, top_positive_coefficients])
  # create plot
  plt.figure(figsize=(15, 5))
- colors = ['red' if c < 0 else 'blue' for c in lowstar_coef[top_coefficients]]
- plt.bar(np.arange(2 * top_features), lowstar_coef[top_coefficients], color=colors)
+ colors = ['red' if c < 0 else 'blue' for c in np.hstack([lowstar_coef[top_negative_coefficients], highstar_coef[top_positive_coefficients]])]
+ plt.bar(np.arange(2 * top_features), np.hstack([lowstar_coef[top_negative_coefficients], highstar_coef[top_positive_coefficients]]), color=colors)
  feature_names = np.array(feature_names)
- plt.xticks(np.arange(1, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60)
+ plt.xticks(np.arange(0, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60)
  plt.show()
 
 
 
-#plot_coefficients(clf, vocab)
-#plot_coefficients(clf, vocab,star_type=4)
+plot_coefficients(clf, vocab)
+plot_coefficients(clf, vocab,star_type=4)
 
 
 

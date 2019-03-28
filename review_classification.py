@@ -28,19 +28,63 @@ import sys
 #import pydot
 from sklearn.externals.six import StringIO
 from sklearn.feature_extraction.text import TfidfVectorizer
+import csv
 
-#import the fx to scrape data
+#import data
 path = os.path.join(os.path.expanduser("~"),"Documents","GitHub","yelp_dataset") 
 sys.path.insert(0, path)
 sys.path.insert(0, "C:\Users\mgelman\AppData\Local\Continuum\anaconda2\Library\bin\graphviz")
 
-#STEP 1: LOADING IN DATA - I ALREADY HAVE THE DATA READY TO GO FROM STATA
-inputfile=os.path.join(path,"review.json")
+#STEP 1: LOADING IN DATA 
+
+#LOAD BUSINESS DATA
+inputfile=os.path.join(path,"business.json")
+business_data = pd.read_json(inputfile,lines=True) 
+#only need ID and zipcode for now
+business_data=business_data[['business_id','postal_code','state']]
+#convert postal code to integers (will get rid of non-us zipcodes)
+business_data['postal_code']=pd.to_numeric(business_data['postal_code'],errors='coerce')
+business_data.dropna(inplace=True)
+
+
+#LOAD IN REVIEW DATA (use unix command top to create a smaller version of the dataset)
+#head -n NUMBEROFLINES file.json > mynewfile.json
+#inputfile=os.path.join(path,"review.json")
+inputfile=os.path.join(path,"review_3m.json")
 #inputfile=os.path.join(path,"review_500k.json")
 outputfile=os.path.join(path,"review.pkl")
+review_data = pd.read_json(inputfile,lines=True) 
+#only keep business_id, date, stars, text
+review_data=review_data[['business_id','date','stars','text']]
 
-# load in file
-data = pd.read_json(inputfile,lines=True) 
+
+#LOAD IN ZILLOW DATA
+inputfile=os.path.join(path,"Zip_Zhvi_AllHomes.csv")
+#zillow_data = pd.read_csv(inputfile, header=0, quoting=3) 
+zillow_data = pd.read_csv(inputfile) 
+#Drop some columns 
+zillow_data.drop(['RegionID', 'City','State','Metro','CountyName','SizeRank'], axis=1, inplace=True)
+#convert to long
+zillow_data=pd.melt(zillow_data, id_vars='RegionName', value_vars=list(zillow_data.columns.values)[1:])
+#generate datetime
+zillow_data['date']=pd.to_datetime(zillow_data['variable'])
+zillow_data['year']=zillow_data['date'].dt.year
+#get yearly mean
+zillow_yearly_avg=zillow_data.groupby(['RegionName','year'])['value'].mean().reset_index()
+
+#%% Merge everyting together
+
+#First merge the yelp data to get zipcode
+yelp_merged=review_data.merge(business_data,left_on='business_id',right_on='business_id',how='left',validate="m:1")
+yelp_merged['year']=pd.to_datetime(yelp_merged['date']).dt.year
+
+#merge yelp with zillow
+final_data=yelp_merged.merge(zillow_yearly_avg,left_on=['postal_code','year'],right_on=['RegionName','year'],how='left',validate="m:1")
+final_data.dropna(inplace=True)
+
+csv_file_name=os.path.join(path,"yelp_zillow.tsv")
+final_data[['year','stars','postal_code','state','value']].to_csv(csv_file_name, sep='\t', encoding='utf-8',index=False,quoting=csv.QUOTE_NONE)
+
 
 
 #%% Min and max date?

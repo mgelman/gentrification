@@ -20,6 +20,49 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
+import matplotlib.pyplot as plt
+
+#rng = np.random.RandomState(10)  # deterministic random data
+#a = np.hstack((rng.normal(size=1000),
+#rng.normal(loc=5, scale=2, size=1000)))
+#plt.hist(a, bins='auto')  # arguments are passed to np.histogram
+#plt.title("Histogram with 'auto' bins")
+#plt.show()
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
+
 
 #import packages
 import numpy as np
@@ -73,6 +116,14 @@ zillow_data['date']=pd.to_datetime(zillow_data['variable'])
 zillow_data['year']=zillow_data['date'].dt.year
 #get yearly mean
 zillow_yearly_avg=zillow_data.groupby(['RegionName','year'])['value'].mean().reset_index()
+#get log difference
+zillow_yearly_avg['P_LD']=np.log(zillow_yearly_avg).groupby(['RegionName'])['value'].diff()
+#drop the earliest obs because we can't get diff
+zillow_yearly_avg.dropna(inplace=True)
+#Create P_LD categories
+zillow_yearly_avg['P_LD_CAT']=pd.qcut(zillow_yearly_avg['P_LD'].values, 5).codes
+#confirm the correct split
+zillow_yearly_avg['P_LD_CAT'].value_counts(normalize=True, sort=False)
 
 #%% Merge everyting together
 
@@ -99,9 +150,10 @@ final_data[['year','stars','postal_code','state','value']].to_csv(csv_file_name,
 #data.to_pickle(outputfile)
 
 #define y as the stars and X as text
-y_data=final_data['value']
-#X_data=final_data[['stars','text']]
-X_data=final_data[['stars']]
+#y_data=final_data['value']
+y_data=final_data['P_LD_CAT']
+X_data=final_data[['stars','text']]
+#X_data=final_data[['stars']]
 #print y_data.value_counts(normalize=True, sort=False)
 
 #create label
@@ -123,27 +175,22 @@ X_te = vectorizer.transform(X_test['text'])
 vocab = vectorizer.get_feature_names()
 vocab_str = [str(x.encode('utf-8')) for x in vocab]
 
-
+#add in stars as a feature
 X_tr_mat= hstack([X_tr,np.matrix(X_train['stars']).T])
 X_te_mat = hstack([X_te,np.matrix(X_test['stars']).T])
-
-
-
-X_tr_mat= X_train['stars']
 
 #%%
 
 #Use the tree clasifier
 #clf = DecisionTreeRegressor(max_leaf_nodes=15)
-clf = DecisionTreeRegressor()
+clf = DecisionTreeClassifier(max_leaf_nodes=15)
+#clf = DecisionTreeRegressor()
 #clf = RandomForestClassifier(
 #                n_estimators=128,
 #                n_jobs=-1,
 #                verbose=1)
 
 #clf = DecisionTreeClassifier(max_leaf_nodes=15)
-
-X_tr_mat=X_tr_mat.reshape(-1,1)
 
 clf = clf.fit(X_tr_mat, y_train)
 
@@ -152,7 +199,7 @@ clf = clf.fit(X_tr_mat, y_train)
 #words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
 #words_freq =sorted(words_freq, key = lambda x: x[1], reverse=True)
 # 
-# #Look a Top X frequent words
+##Look a Top X frequent words
 #for word, freq in words_freq[:10]:
 #    print(word, freq)  
 
@@ -160,9 +207,11 @@ clf = clf.fit(X_tr_mat, y_train)
 y_pred = clf.predict(X_te_mat)
 
 #confusion matrix
+#create label
+#price_label = [0,1,2,3,4]
 #cm=confusion_matrix(y_test, y_pred)
 #np.set_printoptions(precision=2)
-#plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
+#plot_confusion_matrix(cm, classes=price_label,normalize=True,title='Normalized confusion matrix')
 
 
 
@@ -172,9 +221,7 @@ y_pred = clf.predict(X_te_mat)
 #overall score
 training_score = clf.score(X_tr_mat, y_train, sample_weight = None)
 testing_score = clf.score(X_te_mat, y_test, sample_weight = None)
-print()
 print("the training_score is " + str(training_score))
-print()
 print("the testing_score is " + str(testing_score))
 
 
@@ -185,20 +232,34 @@ for x in range(20):
     print sorted_x[x]
 
 #%%
+#Graph the tree
+dot_data = StringIO()
+tree.export_graphviz(clf, out_file=dot_data,
+                  feature_names=vocab_str+["stars"],
+                  filled=True, rounded=True, special_characters=True,
+                  # proportion=True
+                  )
+graph = pydot.graph_from_dot_data(dot_data.getvalue())
+graphfile=os.path.join(path,"fig","graph_v2.pdf")
+graph[0].write_pdf(graphfile)
+
+    
+
+#%%
 from sklearn.naive_bayes import MultinomialNB    
     
-clf = MultinomialNB().fit(X_tr, y_train) #classifying transformed text data to target value 
+clf = MultinomialNB().fit(X_tr_mat, y_train) #classifying transformed text data to target value 
 
 #confusion matrix
-y_pred = clf.predict(X_te)
-cm=confusion_matrix(y_test, y_pred)
-np.set_printoptions(precision=2)
-plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
+y_pred = clf.predict(X_te_mat)
+#cm=confusion_matrix(y_test, y_pred)
+#np.set_printoptions(precision=2)
+#plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
 
 
 #calculating the mean accuracy on the given test data and labels 
-training_score = clf.score(X_tr, y_train, sample_weight = None)
-testing_score = clf.score(X_te, y_test, sample_weight = None)
+training_score = clf.score(X_tr_mat, y_train, sample_weight = None)
+testing_score = clf.score(X_te_mat, y_test, sample_weight = None)
 print()
 print("the training_score is " + str(training_score))
 print()
@@ -213,19 +274,20 @@ print(np.take(vocab, pos_class_prob_sorted[-10:]))
 
 #%%
 from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVR
     
-clf = LinearSVC().fit(X_tr, y_train) #classifying transformed text data to target value 
+clf = LinearSVC().fit(X_tr_mat, y_train) #classifying transformed text data to target value 
 
 #confusion matrix
-y_pred = clf.predict(X_te)
+y_pred = clf.predict(X_te_mat)
 cm=confusion_matrix(y_test, y_pred)
 np.set_printoptions(precision=2)
-plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
+#plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
 
 
 #calculating the mean accuracy on the given test data and labels 
-training_score = clf.score(X_tr, y_train, sample_weight = None)
-testing_score = clf.score(X_te, y_test, sample_weight = None)
+training_score = clf.score(X_tr_mat, y_train, sample_weight = None)
+testing_score = clf.score(X_te_mat, y_test, sample_weight = None)
 print()
 print("the training_score is " + str(training_score))
 print()
@@ -335,17 +397,3 @@ print log.sort_values(by='Accuracy',ascending=False)
 
 
 
-#%%
-#Graph the tree
-dot_data = StringIO()
-tree.export_graphviz(clf, out_file=dot_data,
-                 # feature_names=vocab_str+["stars"],
-                  feature_names=["stars"],
-                  filled=True, rounded=True, special_characters=True,
-                  # proportion=True
-                  )
-graph = pydot.graph_from_dot_data(dot_data.getvalue())
-graphfile=os.path.join(path,"fig","graph_v2.pdf")
-graph[0].write_pdf(graphfile)
-
-    

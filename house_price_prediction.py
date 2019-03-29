@@ -14,6 +14,7 @@ import itertools
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeRegressor
 from sklearn import tree
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
@@ -26,7 +27,7 @@ from scipy.sparse import hstack
 import operator
 import os
 import sys
-#import pydot
+import pydot
 from sklearn.externals.six import StringIO
 from sklearn.feature_extraction.text import TfidfVectorizer
 import csv
@@ -52,7 +53,7 @@ business_data.dropna(inplace=True)
 #head -n NUMBEROFLINES file.json > mynewfile.json
 #inputfile=os.path.join(path,"review.json")
 #inputfile=os.path.join(path,"review_3m.json")
-inputfile=os.path.join(path,"review_1k.json")
+inputfile=os.path.join(path,"review_100k.json")
 outputfile=os.path.join(path,"review.pkl")
 review_data = pd.read_json(inputfile,lines=True) 
 #only keep business_id, date, stars, text
@@ -88,17 +89,6 @@ final_data[['year','stars','postal_code','state','value']].to_csv(csv_file_name,
 
 
 
-#%% Min and max date?
-#only keep date
-data=data['date']
-
-data.min(axis=0)
-data.max(axis=0)
-
-data['year'].value_counts()
-
-data['year'] = pd.DatetimeIndex(data).year
-
 #%%
 
 #only keep stars and text
@@ -110,8 +100,9 @@ data['year'] = pd.DatetimeIndex(data).year
 
 #define y as the stars and X as text
 y_data=final_data['value']
-X_data=final_data['text']
-print y_data.value_counts(normalize=True, sort=False)
+#X_data=final_data[['stars','text']]
+X_data=final_data[['stars']]
+#print y_data.value_counts(normalize=True, sort=False)
 
 #create label
 #star_label = [1,2,3,4,5]
@@ -126,64 +117,37 @@ vectorizer = TfidfVectorizer(ngram_range=(1, 2),
                              #binary=True)
                              #token_pattern=r'\b[^\d\W]+\b') #only words and not numbers
 #vectorizer= TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2', encoding='latin-1', ngram_range=(1, 2), stop_words='english')
-X_tr = vectorizer.fit_transform(X_train)
-X_te = vectorizer.transform(X_test)
+X_tr = vectorizer.fit_transform(X_train['text'])
+X_te = vectorizer.transform(X_test['text'])
 
 vocab = vectorizer.get_feature_names()
 vocab_str = [str(x.encode('utf-8')) for x in vocab]
 
 
-def plot_confusion_matrix(cm, classes,
-                          normalize=False,
-                          title='Confusion matrix',
-                          cmap=plt.cm.Blues):
-    """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    """
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        print("Normalized confusion matrix")
-    else:
-        print('Confusion matrix, without normalization')
-
-    print(cm)
-
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
-
-    fmt = '.2f' if normalize else 'd'
-    thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, format(cm[i, j], fmt),
-                 horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
-
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.tight_layout()
+X_tr_mat= hstack([X_tr,np.matrix(X_train['stars']).T])
+X_te_mat = hstack([X_te,np.matrix(X_test['stars']).T])
 
 
 
+X_tr_mat= X_train['stars']
 
 #%%
 
 #Use the tree clasifier
-#clf = DecisionTreeClassifier(
-clf = RandomForestClassifier(
-                n_estimators=128,
-                n_jobs=-1,
-                verbose=1)
+#clf = DecisionTreeRegressor(max_leaf_nodes=15)
+clf = DecisionTreeRegressor()
+#clf = RandomForestClassifier(
+#                n_estimators=128,
+#                n_jobs=-1,
+#                verbose=1)
 
 #clf = DecisionTreeClassifier(max_leaf_nodes=15)
 
-clf = clf.fit(X_tr, y_train)
+X_tr_mat=X_tr_mat.reshape(-1,1)
 
- #check which words are the most frequent 
+clf = clf.fit(X_tr_mat, y_train)
+
+#check which words are the most frequent 
 #sum_words = X_tr.sum(axis=0) 
 #words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
 #words_freq =sorted(words_freq, key = lambda x: x[1], reverse=True)
@@ -193,12 +157,12 @@ clf = clf.fit(X_tr, y_train)
 #    print(word, freq)  
 
 
-y_pred = clf.predict(X_te)
+y_pred = clf.predict(X_te_mat)
 
 #confusion matrix
-cm=confusion_matrix(y_test, y_pred)
-np.set_printoptions(precision=2)
-plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
+#cm=confusion_matrix(y_test, y_pred)
+#np.set_printoptions(precision=2)
+#plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
 
 
 
@@ -206,8 +170,8 @@ plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized co
 #print cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
 #overall score
-training_score = clf.score(X_tr, y_train, sample_weight = None)
-testing_score = clf.score(X_te, y_test, sample_weight = None)
+training_score = clf.score(X_tr_mat, y_train, sample_weight = None)
+testing_score = clf.score(X_te_mat, y_test, sample_weight = None)
 print()
 print("the training_score is " + str(training_score))
 print()
@@ -375,12 +339,13 @@ print log.sort_values(by='Accuracy',ascending=False)
 #Graph the tree
 dot_data = StringIO()
 tree.export_graphviz(clf, out_file=dot_data,
-                  feature_names=vocab_str,
+                 # feature_names=vocab_str+["stars"],
+                  feature_names=["stars"],
                   filled=True, rounded=True, special_characters=True,
                   # proportion=True
                   )
 graph = pydot.graph_from_dot_data(dot_data.getvalue())
-graphfile=os.path.join(path,"fig","graph.pdf")
+graphfile=os.path.join(path,"fig","graph_v2.pdf")
 graph[0].write_pdf(graphfile)
 
     

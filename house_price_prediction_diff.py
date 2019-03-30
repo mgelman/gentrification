@@ -33,7 +33,7 @@ import pydotplus
 from sklearn.externals.six import StringIO
 from sklearn.feature_extraction.text import TfidfVectorizer
 import csv
-
+import scipy
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -93,8 +93,10 @@ business_data.dropna(inplace=True)
 
 #LOAD IN REVIEW DATA (use unix command top to create a smaller version of the dataset)
 #head -n NUMBEROFLINES file.json > mynewfile.json
+#TO GET SPECIFIC YEAR
+#grep -E '201[0|1|2]' review.json > review_2010-2012.json
 #inputfile=os.path.join(path,"review.json")
-inputfile=os.path.join(path,"review_100k.json")
+inputfile=os.path.join(path,"review_2010-2012.json")
 #inputfile=os.path.join(path,"review_100k.json")
 outputfile=os.path.join(path,"review.pkl")
 review_data = pd.read_json(inputfile,lines=True) 
@@ -115,12 +117,8 @@ zillow_data['date']=pd.to_datetime(zillow_data['variable'])
 zillow_data['year']=zillow_data['date'].dt.year
 #get yearly mean
 zillow_yearly_avg=zillow_data.groupby(['RegionName','year'])['value'].mean().reset_index()
-#get log difference
-zillow_yearly_avg['P_LD']=np.log(zillow_yearly_avg).groupby(['RegionName'])['value'].diff()
-#drop the earliest obs because we can't get diff
-zillow_yearly_avg.dropna(inplace=True)
 
-#%% Merge everyting together
+##%% Merge everyting together
 
 #First merge the yelp data to get zipcode
 yelp_merged=review_data.merge(business_data,left_on='business_id',right_on='business_id',how='left',validate="m:1")
@@ -134,15 +132,74 @@ csv_file_name=os.path.join(path,"yelp_zillow.tsv")
 final_data[['year','stars','postal_code','state','value']].to_csv(csv_file_name, sep='\t', encoding='utf-8',index=False,quoting=csv.QUOTE_NONE)
 
 
+#%% create differences
+
+
+#First aggregate to zip year
+# create the dictionary for the collapse (mapping from var to agg type)
+
+# group by creates a mapping from the user_id to the row index. Ie, user 1 maps to rows 4,5,6, user 2 maps to rows 7,8,9.
+data_group = final_data.groupby(['postal_code','year'], as_index=False)
+
+# aggregate in groups depending on the var type
+# group 1: numerican variables
+mean=['value', 'stars']
+
+# group 2: retain all strings
+all = ['text']
+
+#group 3: ID vars: like state
+first=['state']
+
+# create the dictionary for the collapse (mapping from var to agg type)
+d = {}
+d_agg_type = {'first': first,
+              np.nanmean: mean,
+              lambda x: " ".join(x): all}
+
+for key, value in d_agg_type.iteritems():
+    for col in value:
+        d.update({col: key})
+
+# collapse data
+final_data_collapsed = data_group.agg(d)
+
+#create log prices
+final_data_collapsed['log_price']=np.log(final_data_collapsed['value'])
+
+#NEED TO SORT TO GET DIFF
+final_data_collapsed.sort_values(['postal_code','year'],inplace=True)
+
+#convert words to word differences
+vectorizer = CountVectorizer(ngram_range=(1, 1),
+                             stop_words='english',
+                             min_df=30)
+X_test= vectorizer.fit_transform(final_data_collapsed['text'])
+
+#add the zipcode and year to the words
+word_df=pd.concat([final_data_collapsed[['postal_code','year']],pd.DataFrame(X_test.todense())],axis=1)
+#take the difference
+word_df=word_df.groupby(['postal_code']).diff()
+#only keep the ones
+word_df=word_df.loc[word_df['year'] == 1]
+#drop the column and covert back to sparse matrix
+word_df.drop(['year'], axis=1, inplace=True)
+X_words=scipy.sparse.csr_matrix(word_df.values)
+
+#sort by postal_code,year
+final_data_collapsed[['D_LP','D_stars','D_year']]=final_data_collapsed.groupby(['postal_code'])['log_price','stars','year'].diff()
+#only keep if the difference in year is 1. Or else we are missing data
+final_data_collapsed=final_data_collapsed.loc[final_data_collapsed['D_year'] == 1]
+
 #Create P_LD categories
-final_data['P_LD_CAT']=pd.qcut(final_data['P_LD'].values, 5).codes
+final_data_collapsed['P_LD_CAT']=pd.qcut(final_data_collapsed['D_LP'].values, 5).codes
 #confirm the correct split
-final_data['P_LD_CAT'].value_counts(normalize=True, sort=False)
+final_data_collapsed['P_LD_CAT'].value_counts(normalize=True, sort=False)
 #histogram
-final_data.hist(column='P_LD',bins=100)
-final_data['P_LD'].describe()
+final_data_collapsed.hist(column='D_LP',bins=100)
+final_data_collapsed['D_LP'].describe()
 #state
-final_data['state'].value_counts(normalize=True, sort=True)
+final_data_collapsed['state'].value_counts(normalize=True, sort=True)
 
 del review_data, business_data, zillow_data
 
@@ -157,37 +214,23 @@ del review_data, business_data, zillow_data
 
 #define y as the stars and X as text
 #y_data=final_data['value']
-y_data=final_data['P_LD_CAT']
-#X_data=pd.concat([final_data[['stars','text']],pd.get_dummies(final_data['categories'])],axis=1)
-X_data=final_data[['stars','text']]
+y_data=final_data_collapsed['P_LD_CAT']
+#X_data=final_data[['stars','text']]
 #X_data=final_data[['stars','text','categories']]
-#X_data=final_data[['stars']]
+X_data=final_data_collapsed[['D_stars']]
 #print y_data.value_counts(normalize=True, sort=False)
 
 #split into training and test
-X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.25, random_state=1234)
-
-#vectorize
-vectorizer = TfidfVectorizer(ngram_range=(1, 1),
-                             stop_words='english',
-                             min_df=30)
-                             #min_df=0.005)
-                             #binary=True)
-                             #token_pattern=r'\b[^\d\W]+\b') #only words and not numbers
-#vectorizer= TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2', encoding='latin-1', ngram_range=(1, 2), stop_words='english')
-X_tr_tx = vectorizer.fit_transform(X_train['text'])
-X_te_tx = vectorizer.transform(X_test['text'])
+X_train, X_test, y_train, y_test, X_words_train, X_words_test = train_test_split(
+            X_data, y_data, X_words, test_size=0.25, random_state=1234)
 
 vocab = vectorizer.get_feature_names()
 vocab_str = [str(x.encode('utf-8')) for x in vocab]
 
 #Add in stars and yelp categories as features
-X_tr= hstack([X_tr_tx,np.matrix(X_train.drop('text',axis=1))])
-X_te= hstack([X_te_tx,np.matrix(X_test.drop('text',axis=1))])
+X_tr=hstack([X_words_train,np.matrix(X_train)])
+X_te=hstack([X_words_test,np.matrix(X_test)])
 
-#add in stars as a feature
-#X_tr= hstack([X_tr_tx,np.matrix(X_train['stars']).T])
-#X_te = hstack([X_te_tx,np.matrix(X_test['stars']).T])
 
 #%%
 

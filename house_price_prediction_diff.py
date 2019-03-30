@@ -97,12 +97,22 @@ business_data.dropna(inplace=True)
 #grep -E '201[0|1|2]' review.json > review_2010-2012.json
 #inputfile=os.path.join(path,"review.json")
 inputfile=os.path.join(path,"review_2010-2012.json")
-#inputfile=os.path.join(path,"review_100k.json")
+#inputfile=os.path.join(path,"review_2007-2008.json")
+#inputfile=os.path.join(path,"review_1k.json")
 outputfile=os.path.join(path,"review.pkl")
 review_data = pd.read_json(inputfile,lines=True) 
 #only keep business_id, date, stars, text
 review_data=review_data[['business_id','date','stars','text']]
+#take out #s
+review_data['text']=review_data['text'].str.replace('[0-9]','')
 
+#vectorizer = TfidfVectorizer(ngram_range=(1, 1),
+#                             stop_words='english',
+#                             min_df=30)
+#X_test= vectorizer.fit_transform(test)
+#X_test= vectorizer.fit_transform(review_data['text'])
+#vectorizer.get_feature_names()
+#
 
 #LOAD IN ZILLOW DATA
 inputfile=os.path.join(path,"Zip_Zhvi_AllHomes.csv")
@@ -171,7 +181,7 @@ final_data_collapsed['log_price']=np.log(final_data_collapsed['value'])
 final_data_collapsed.sort_values(['postal_code','year'],inplace=True)
 
 #convert words to word differences
-vectorizer = CountVectorizer(ngram_range=(1, 1),
+vectorizer = TfidfVectorizer(ngram_range=(1, 1),
                              stop_words='english',
                              min_df=30)
 X_test= vectorizer.fit_transform(final_data_collapsed['text'])
@@ -195,12 +205,12 @@ final_data_collapsed=final_data_collapsed.loc[final_data_collapsed['D_year'] == 
 final_data_collapsed['P_LD_CAT']=pd.qcut(final_data_collapsed['D_LP'].values, 5).codes
 #confirm the correct split
 final_data_collapsed['P_LD_CAT'].value_counts(normalize=True, sort=False)
-#histogram
-final_data_collapsed.hist(column='D_LP',bins=100)
+#log price describe
 final_data_collapsed['D_LP'].describe()
 #state
 final_data_collapsed['state'].value_counts(normalize=True, sort=True)
-
+#histogram
+final_data_collapsed.hist(column='D_LP',bins=100)
 del review_data, business_data, zillow_data
 
 #use one hot encoding
@@ -234,9 +244,12 @@ X_te=hstack([X_words_test,np.matrix(X_test)])
 
 #%%
 
+#falsification test
+#y_train=y_train.sample(frac=1)
+
 #Use the tree clasifier
 #clf = DecisionTreeRegressor(max_leaf_nodes=15)
-clf = DecisionTreeClassifier(max_leaf_nodes=20)
+clf = DecisionTreeClassifier()
 #clf = DecisionTreeClassifier()
 #clf = DecisionTreeRegressor()
 #clf = RandomForestClassifier(
@@ -409,8 +422,8 @@ classifiers = [
     KNeighborsClassifier(3),
     LinearSVC(),
     #NuSVC(probability=True),
-    GaussianNB(),
-    MultinomialNB(),
+    #GaussianNB(),
+    #MultinomialNB(),
     LinearDiscriminantAnalysis(),
     QuadraticDiscriminantAnalysis(),
     DecisionTreeClassifier(),

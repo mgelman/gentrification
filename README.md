@@ -22,13 +22,14 @@ the model that only uses stars.
     P_{zy}&=g(Star_{zy}) + \\epsilon_{zy}
 \\end{aligned}
 ")  
-In terms of the variables: -
-![P\_{zy}](https://latex.codecogs.com/png.latex?P_%7Bzy%7D "P_{zy}")-
-House prices from `Zillow` -
-![Star\_{zy}](https://latex.codecogs.com/png.latex?Star_%7Bzy%7D
-"Star_{zy}")- Star ratings from `Yelp` -
-![Review\_{zy}](https://latex.codecogs.com/png.latex?Review_%7Bzy%7D
-"Review_{zy}")- Tex reviews from `Yelp`
+In terms of the variables:
+
+  - ![P\_{zy}](https://latex.codecogs.com/png.latex?P_%7Bzy%7D
+    "P_{zy}")- House prices from `Zillow`
+  - ![Star\_{zy}](https://latex.codecogs.com/png.latex?Star_%7Bzy%7D
+    "Star_{zy}")- Star ratings from `Yelp`
+  - ![Review\_{zy}](https://latex.codecogs.com/png.latex?Review_%7Bzy%7D
+    "Review_{zy}")- Tex reviews from `Yelp`
 
 and ![z](https://latex.codecogs.com/png.latex?z "z") is zipcode,
 ![y](https://latex.codecogs.com/png.latex?y "y") is the year

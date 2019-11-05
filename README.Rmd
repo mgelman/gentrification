@@ -10,10 +10,11 @@ output:
 - [Zillow](https://www.zillow.com/research/data/)
 - [Yelp](https://www.yelp.com/dataset)
 
+------------------------------------------------------------------------
 
 #### The goal of this project is to try to quantify what the role of textual data (in the form of restaraunt reviews) in predicting house price growth
 
-To formalize this, we can think of the following model that states house prices are a function of Yelp star ratings plus review data with $\epsilon_{zy}$ capturing everything else the Yelp data doesn't capture. $f()$ represnts the model that uses both stars and rewview, and $g()$ represents the model that only uses stars. 
+To formalize this, we can think of the following model that states house prices are a function of Yelp star ratings plus review data with $\epsilon_{zy}$ capturing everything else the Yelp data doesn't capture. $f()$ represents the model that uses both stars and rewview, and $g()$ represents the model that only uses stars. 
 
 $$
 \begin{aligned}
@@ -32,7 +33,9 @@ and $z$ is zipcode, $y$ is the year
 
 We can use machine learning models to predict $\hat{f}() \ and \ \hat{g}()$ (which the hat signifies). Once we predict these functions, we can compare the predictions to see which one is more accurate. 
 
-### Issue with levels vs difference
+------------------------------------------------------------------------
+
+#### Issue with levels vs difference
 If our goal is to predict house price growth, the current specification is insufficient because it will just tell us which zipcodes are associated with high house prices. For example, in general, zipcodes with higher restaurant ratings may have higher hosue prices. BUt that doesn't tell us much about how **changes** in restaurant ratings lead to **changes** in house price growth. Therefore, we need to respecify the equation in terms of differences as below. Furthermore, we want to look at the change in **log** prices so that we can interpret these as percentage changes. 
 
 $$
@@ -42,7 +45,8 @@ $$
 \end{aligned}
 $$
 
+------------------------------------------------------------------------
 
-## Ongoing issues
+#### Ongoing issues
 
 - The dataset we are provided is very unbalanced when it comes to geographical location

@@ -6,6 +6,8 @@ Predicting house price data using Yelp/Zillow data
   - [Zillow](https://www.zillow.com/research/data/)
   - [Yelp](https://www.yelp.com/dataset)
 
+-----
+
 #### The goal of this project is to try to quantify what the role of textual data (in the form of restaraunt reviews) in predicting house price growth
 
 To formalize this, we can think of the following model that states house
@@ -13,7 +15,7 @@ prices are a function of Yelp star ratings plus review data with
 ![\\epsilon\_{zy}](https://latex.codecogs.com/png.latex?%5Cepsilon_%7Bzy%7D
 "\\epsilon_{zy}") capturing everything else the Yelp data doesn’t
 capture. ![f()](https://latex.codecogs.com/png.latex?f%28%29 "f()")
-represnts the model that uses both stars and rewview, and
+represents the model that uses both stars and rewview, and
 ![g()](https://latex.codecogs.com/png.latex?g%28%29 "g()") represents
 the model that only uses stars.
 
@@ -50,7 +52,9 @@ We can use machine learning models to predict ![\\hat{f}() \\ and \\
 predict these functions, we can compare the predictions to see which one
 is more accurate.
 
-### Issue with levels vs difference
+-----
+
+#### Issue with levels vs difference
 
 If our goal is to predict house price growth, the current specification
 is insufficient because it will just tell us which zipcodes are
@@ -75,7 +79,9 @@ Other\_{zy}) +
 \\end{aligned}
 ")  
 
-## Ongoing issues
+-----
+
+#### Ongoing issues
 
   - The dataset we are provided is very unbalanced when it comes to
     geographical location

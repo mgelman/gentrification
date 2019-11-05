@@ -1,8 +1,8 @@
 ---
 title: "Predicting house price data using Yelp/Zillow data"
 output: 
-  html_document:
-    #pandoc_args: --webtex
+  github_document:
+    pandoc_args: --webtex
 --- 
 
 The most general specification of the model is 

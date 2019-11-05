@@ -5,21 +5,36 @@ output:
     pandoc_args: --webtex
 --- 
 
-The most general specification of the model is 
-$$
-    P_{bzy}=f(Star_{bzy},Review_{bzy})
-$$
-where
+#### The goal of this project is to try to quantify what the role of textual data (in the form of restaraunt reviews) in predicting house price growth
 
-- $P_{zy}$- Zillow dataset
-- $Star_{zy}$- Review dataset
-- $Review_{zy}$- Review dataset
+To formalize this, we can think of the following model that states house prices are a function of Yelp star ratings plus review data with $\epsilon_{zy}$ capturing everything else the Yelp data doesn't capture. $f()$ represnts the model that uses both stars and rewview, and $g()$ represents the model that only uses stars. 
+
+$$
+\begin{aligned}
+    P_{zy}&=f(Star_{zy},Review_{zy}) + \epsilon_{zy} \\
+    P_{zy}&=g(Star_{zy}) + \epsilon_{zy}
+\end{aligned}
+$$
+In terms of the variables: 
+- $P_{zy}$- House prices from `Zillow`
+- $Star_{zy}$- Star ratings from `Yelp`
+- $Review_{zy}$- Tex reviews from `Yelp`
 
 and $z$ is zipcode, $y$ is the year
 
-The simplest specification is 
+We can use machine learning models to predict $\hat{f}() \ and \ \hat{g}()$ (which the hat signifies). Once we predict these functions, we can compare the predictions to see which one is more accurate. 
 
-\begin{equation}
-    P_{bzy}=\alpha + \beta_1 \times Star_{bzy} + \beta_2 \times Review_{bzy}
-\end{equation}
+### Issue with levels vs difference
+If our goal is to predict house price growth, the current specification is insufficient because it will just tell us which zipcodes are associated with high house prices. For example, in general, zipcodes with higher restaurant ratings may have higher hosue prices. BUt that doesn't tell us much about how **changes** in restaurant ratings lead to **changes** in house price growth. Therefore, we need to respecify the equation in terms of differences as below. Furthermore, we want to look at the change in **log** prices so that we can interpret these as percentage changes. 
 
+$$
+\begin{aligned}
+    \Delta log(P_{zy})&=f(\Delta Star_{zy},\Delta Review_{zy}) + \epsilon_{zy} \\
+    \Delta log(P_{zy})&=g(\Delta Star_{zy}) + \epsilon_{zy}
+\end{aligned}
+$$
+
+
+Ongoing issues
+
+- The dataset we are provided is very unbalanced when it comes to geographical location

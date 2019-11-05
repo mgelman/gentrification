@@ -1,6 +1,11 @@
 Predicting house price data using Yelp/Zillow data
 ================
 
+#### Data Used
+
+  - [Zillow](https://www.zillow.com/research/data/)
+  - [Yelp](https://www.yelp.com/dataset)
+
 #### The goal of this project is to try to quantify what the role of textual data (in the form of restaraunt reviews) in predicting house price growth
 
 To formalize this, we can think of the following model that states house
@@ -13,13 +18,14 @@ represnts the model that uses both stars and rewview, and
 the model that only uses stars.
 
   
-![&#10;\\begin{aligned}&#10; P\_{zy}&=f(Star\_{zy},Review\_{zy}) +
-\\epsilon\_{zy} \\\\&#10; P\_{zy}&=g(Star\_{zy}) +
-\\epsilon\_{zy}&#10;\\end{aligned}&#10;](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%20%20%20%20P_%7Bzy%7D%26%3Df%28Star_%7Bzy%7D%2CReview_%7Bzy%7D%29%20%2B%20%5Cepsilon_%7Bzy%7D%20%5C%5C%0A%20%20%20%20P_%7Bzy%7D%26%3Dg%28Star_%7Bzy%7D%29%20%2B%20%5Cepsilon_%7Bzy%7D%0A%5Cend%7Baligned%7D%0A
+![&#10;\\begin{aligned}&#10;
+P\_{zy}&=f(Star\_{zy},Review\_{zy},Other\_{zy}) + \\epsilon\_{zy}
+\\\\&#10; P\_{zy}&=g(Star\_{zy},Other\_{zy}) +
+\\epsilon\_{zy}&#10;\\end{aligned}&#10;](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%20%20%20%20P_%7Bzy%7D%26%3Df%28Star_%7Bzy%7D%2CReview_%7Bzy%7D%2COther_%7Bzy%7D%29%20%2B%20%5Cepsilon_%7Bzy%7D%20%5C%5C%0A%20%20%20%20P_%7Bzy%7D%26%3Dg%28Star_%7Bzy%7D%2COther_%7Bzy%7D%29%20%2B%20%5Cepsilon_%7Bzy%7D%0A%5Cend%7Baligned%7D%0A
 "
 \\begin{aligned}
-    P_{zy}&=f(Star_{zy},Review_{zy}) + \\epsilon_{zy} \\\\
-    P_{zy}&=g(Star_{zy}) + \\epsilon_{zy}
+    P_{zy}&=f(Star_{zy},Review_{zy},Other_{zy}) + \\epsilon_{zy} \\\\
+    P_{zy}&=g(Star_{zy},Other_{zy}) + \\epsilon_{zy}
 \\end{aligned}
 ")  
 In terms of the variables:
@@ -29,7 +35,11 @@ In terms of the variables:
   - ![Star\_{zy}](https://latex.codecogs.com/png.latex?Star_%7Bzy%7D
     "Star_{zy}")- Star ratings from `Yelp`
   - ![Review\_{zy}](https://latex.codecogs.com/png.latex?Review_%7Bzy%7D
-    "Review_{zy}")- Tex reviews from `Yelp`
+    "Review_{zy}")- Text reviews from `Yelp`
+  - ![Other\_{zy}](https://latex.codecogs.com/png.latex?Other_%7Bzy%7D
+    "Other_{zy}")- Other variables like
+    `population`,`income`,`unemployment` that may explain house price
+    growth
 
 and ![z](https://latex.codecogs.com/png.latex?z "z") is zipcode,
 ![y](https://latex.codecogs.com/png.latex?y "y") is the year
@@ -54,17 +64,18 @@ percentage changes.
 
   
 ![&#10;\\begin{aligned}&#10; \\Delta log(P\_{zy})&=f(\\Delta
-Star\_{zy},\\Delta Review\_{zy}) + \\epsilon\_{zy} \\\\&#10; \\Delta
-log(P\_{zy})&=g(\\Delta Star\_{zy}) +
-\\epsilon\_{zy}&#10;\\end{aligned}&#10;](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%20%20%20%20%5CDelta%20log%28P_%7Bzy%7D%29%26%3Df%28%5CDelta%20Star_%7Bzy%7D%2C%5CDelta%20Review_%7Bzy%7D%29%20%2B%20%5Cepsilon_%7Bzy%7D%20%5C%5C%0A%20%20%20%20%5CDelta%20log%28P_%7Bzy%7D%29%26%3Dg%28%5CDelta%20Star_%7Bzy%7D%29%20%2B%20%5Cepsilon_%7Bzy%7D%0A%5Cend%7Baligned%7D%0A
+Star\_{zy},\\Delta Review\_{zy},\\Delta Other\_{zy}) + \\epsilon\_{zy}
+\\\\&#10; \\Delta log(P\_{zy})&=g(\\Delta Star\_{zy},\\Delta
+Other\_{zy}) +
+\\epsilon\_{zy}&#10;\\end{aligned}&#10;](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%20%20%20%20%5CDelta%20log%28P_%7Bzy%7D%29%26%3Df%28%5CDelta%20Star_%7Bzy%7D%2C%5CDelta%20Review_%7Bzy%7D%2C%5CDelta%20Other_%7Bzy%7D%29%20%2B%20%5Cepsilon_%7Bzy%7D%20%5C%5C%0A%20%20%20%20%5CDelta%20log%28P_%7Bzy%7D%29%26%3Dg%28%5CDelta%20Star_%7Bzy%7D%2C%5CDelta%20Other_%7Bzy%7D%29%20%2B%20%5Cepsilon_%7Bzy%7D%0A%5Cend%7Baligned%7D%0A
 "
 \\begin{aligned}
-    \\Delta log(P_{zy})&=f(\\Delta Star_{zy},\\Delta Review_{zy}) + \\epsilon_{zy} \\\\
-    \\Delta log(P_{zy})&=g(\\Delta Star_{zy}) + \\epsilon_{zy}
+    \\Delta log(P_{zy})&=f(\\Delta Star_{zy},\\Delta Review_{zy},\\Delta Other_{zy}) + \\epsilon_{zy} \\\\
+    \\Delta log(P_{zy})&=g(\\Delta Star_{zy},\\Delta Other_{zy}) + \\epsilon_{zy}
 \\end{aligned}
 ")  
 
-Ongoing issues
+## Ongoing issues
 
   - The dataset we are provided is very unbalanced when it comes to
     geographical location

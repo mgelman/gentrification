@@ -5,21 +5,28 @@ output:
     pandoc_args: --webtex
 --- 
 
+#### Data Used
+
+- [Zillow](https://www.zillow.com/research/data/)
+- [Yelp](https://www.yelp.com/dataset)
+
+
 #### The goal of this project is to try to quantify what the role of textual data (in the form of restaraunt reviews) in predicting house price growth
 
 To formalize this, we can think of the following model that states house prices are a function of Yelp star ratings plus review data with $\epsilon_{zy}$ capturing everything else the Yelp data doesn't capture. $f()$ represnts the model that uses both stars and rewview, and $g()$ represents the model that only uses stars. 
 
 $$
 \begin{aligned}
-    P_{zy}&=f(Star_{zy},Review_{zy}) + \epsilon_{zy} \\
-    P_{zy}&=g(Star_{zy}) + \epsilon_{zy}
+    P_{zy}&=f(Star_{zy},Review_{zy},Other_{zy}) + \epsilon_{zy} \\
+    P_{zy}&=g(Star_{zy},Other_{zy}) + \epsilon_{zy}
 \end{aligned}
 $$
 In terms of the variables: 
 
 - $P_{zy}$- House prices from `Zillow`
 - $Star_{zy}$- Star ratings from `Yelp`
-- $Review_{zy}$- Tex reviews from `Yelp`
+- $Review_{zy}$- Text reviews from `Yelp`
+- $Other_{zy}$- Other variables like `population`,`income`,`unemployment` that may explain house price growth
 
 and $z$ is zipcode, $y$ is the year
 
@@ -30,12 +37,12 @@ If our goal is to predict house price growth, the current specification is insuf
 
 $$
 \begin{aligned}
-    \Delta log(P_{zy})&=f(\Delta Star_{zy},\Delta Review_{zy}) + \epsilon_{zy} \\
-    \Delta log(P_{zy})&=g(\Delta Star_{zy}) + \epsilon_{zy}
+    \Delta log(P_{zy})&=f(\Delta Star_{zy},\Delta Review_{zy},\Delta Other_{zy}) + \epsilon_{zy} \\
+    \Delta log(P_{zy})&=g(\Delta Star_{zy},\Delta Other_{zy}) + \epsilon_{zy}
 \end{aligned}
 $$
 
 
-Ongoing issues
+## Ongoing issues
 
 - The dataset we are provided is very unbalanced when it comes to geographical location

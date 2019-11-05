@@ -1,0 +1,25 @@
+---
+title: "Predicting house price data using Yelp/Zillow data"
+output: 
+  html_document:
+    #pandoc_args: --webtex
+--- 
+
+The most general specification of the model is 
+$$
+    P_{bzy}=f(Star_{bzy},Review_{bzy})
+$$
+where
+
+- $P_{zy}$- Zillow dataset
+- $Star_{zy}$- Review dataset
+- $Review_{zy}$- Review dataset
+
+and $z$ is zipcode, $y$ is the year
+
+The simplest specification is 
+
+\begin{equation}
+    P_{bzy}=\alpha + \beta_1 \times Star_{bzy} + \beta_2 \times Review_{bzy}
+\end{equation}
+

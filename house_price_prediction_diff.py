@@ -310,71 +310,71 @@ graphfile = os.path.join(path, "fig", "graph_v2.pdf")
 graph.write_pdf(graphfile)
 
 # %%
-from sklearn.naive_bayes import MultinomialNB
-
-clf = MultinomialNB().fit(X_tr, y_train)  # classifying transformed text data to target value
-
-# confusion matrix
-y_pred = clf.predict(X_te)
-# cm=confusion_matrix(y_test, y_pred)
-# np.set_printoptions(precision=2)
-# plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
-
-
-# calculating the mean accuracy on the given test data and labels
-training_score = clf.score(X_tr, y_train, sample_weight=None)
-testing_score = clf.score(X_te, y_test, sample_weight=None)
-print()
-print("the training_score is " + str(training_score))
-print()
-print("the testing_score is " + str(testing_score))
-
-neg_class_prob_sorted = clf.feature_log_prob_[0, :].argsort()
-pos_class_prob_sorted = clf.feature_log_prob_[4, :].argsort()
-
-print(np.take(feat_str, neg_class_prob_sorted[-10:]))
-print(np.take(feat_str, pos_class_prob_sorted[-10:]))
+# from sklearn.naive_bayes import MultinomialNB
+#
+# clf = MultinomialNB().fit(X_tr, y_train)  # classifying transformed text data to target value
+#
+# # confusion matrix
+# y_pred = clf.predict(X_te)
+# # cm=confusion_matrix(y_test, y_pred)
+# # np.set_printoptions(precision=2)
+# # plot_confusion_matrix(cm, classes=star_label,normalize=True,title='Normalized confusion matrix')
+#
+#
+# # calculating the mean accuracy on the given test data and labels
+# training_score = clf.score(X_tr, y_train, sample_weight=None)
+# testing_score = clf.score(X_te, y_test, sample_weight=None)
+# print()
+# print("the training_score is " + str(training_score))
+# print()
+# print("the testing_score is " + str(testing_score))
+#
+# neg_class_prob_sorted = clf.feature_log_prob_[0, :].argsort()
+# pos_class_prob_sorted = clf.feature_log_prob_[4, :].argsort()
+#
+# print(np.take(feat_str, neg_class_prob_sorted[-10:]))
+# print(np.take(feat_str, pos_class_prob_sorted[-10:]))
 
 # %%
-from sklearn.svm import LinearSVC
-
-clf = LinearSVC().fit(X_tr, y_train)  # classifying transformed text data to target value
-
-# confusion matrix
-y_pred = clf.predict(X_te)
-cm = confusion_matrix(y_test, y_pred)
-np.set_printoptions(precision=2)
-plot_confusion_matrix(cm, classes=price_label, normalize=True, title='Normalized confusion matrix')
-
-# calculating the mean accuracy on the given test data and labels
-training_score = clf.score(X_tr, y_train, sample_weight=None)
-testing_score = clf.score(X_te, y_test, sample_weight=None)
-print()
-print("the training_score is " + str(training_score))
-print()
-print("the testing_score is " + str(testing_score))
-
-
-def plot_coefficients(classifier, feature_names, top_features=10):
-    lowstar_coef = classifier.coef_[0, :] * -1
-    highstar_coef = classifier.coef_[4, :]
-    top_positive_coefficients = np.argsort(highstar_coef)[-top_features:]
-    top_negative_coefficients = np.argsort(lowstar_coef)[:top_features]
-    top_coefficients = np.hstack([top_negative_coefficients, top_positive_coefficients])
-    # create plot
-    plt.figure(figsize=(15, 5))
-    colors = ['red' if c < 0 else 'blue' for c in
-              np.hstack([lowstar_coef[top_negative_coefficients], highstar_coef[top_positive_coefficients]])]
-    plt.bar(np.arange(2 * top_features),
-            np.hstack([lowstar_coef[top_negative_coefficients], highstar_coef[top_positive_coefficients]]),
-            color=colors)
-    feature_names = np.array(feature_names)
-    plt.xticks(np.arange(0, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60)
-    plt.show()
-
-
-plot_coefficients(clf, feat_str)
-# plot_coefficients(clf, vocab,star_type=4)
+# from sklearn.svm import LinearSVC
+#
+# clf = LinearSVC().fit(X_tr, y_train)  # classifying transformed text data to target value
+#
+# # confusion matrix
+# y_pred = clf.predict(X_te)
+# cm = confusion_matrix(y_test, y_pred)
+# np.set_printoptions(precision=2)
+# plot_confusion_matrix(cm, classes=price_label, normalize=True, title='Normalized confusion matrix')
+#
+# # calculating the mean accuracy on the given test data and labels
+# training_score = clf.score(X_tr, y_train, sample_weight=None)
+# testing_score = clf.score(X_te, y_test, sample_weight=None)
+# print()
+# print("the training_score is " + str(training_score))
+# print()
+# print("the testing_score is " + str(testing_score))
+#
+#
+# def plot_coefficients(classifier, feature_names, top_features=10):
+#     lowstar_coef = classifier.coef_[0, :] * -1
+#     highstar_coef = classifier.coef_[4, :]
+#     top_positive_coefficients = np.argsort(highstar_coef)[-top_features:]
+#     top_negative_coefficients = np.argsort(lowstar_coef)[:top_features]
+#     top_coefficients = np.hstack([top_negative_coefficients, top_positive_coefficients])
+#     # create plot
+#     plt.figure(figsize=(15, 5))
+#     colors = ['red' if c < 0 else 'blue' for c in
+#               np.hstack([lowstar_coef[top_negative_coefficients], highstar_coef[top_positive_coefficients]])]
+#     plt.bar(np.arange(2 * top_features),
+#             np.hstack([lowstar_coef[top_negative_coefficients], highstar_coef[top_positive_coefficients]]),
+#             color=colors)
+#     feature_names = np.array(feature_names)
+#     plt.xticks(np.arange(0, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60)
+#     plt.show()
+#
+#
+# plot_coefficients(clf, feat_str)
+# # plot_coefficients(clf, vocab,star_type=4)
 
 
 # %%
